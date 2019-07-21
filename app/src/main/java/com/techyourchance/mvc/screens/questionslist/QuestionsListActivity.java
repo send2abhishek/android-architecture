@@ -1,13 +1,7 @@
 package com.techyourchance.mvc.screens.questionslist;
 
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ListView;
+import android.view.LayoutInflater;
 import android.widget.Toast;
 
 import com.techyourchance.mvc.R;
@@ -27,22 +21,19 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class QuestionsListActivity extends BaseActivity implements
-        QuestionsListAdapter.OnQuestionClickListener {
+public class QuestionsListActivity extends BaseActivity implements QuestionListViewMvcImpl.Listener {
 
     private StackoverflowApi mStackoverflowApi;
+    private QuestionListViewMvcImpl questionListViewMvc;
 
-    private ListView mLstQuestions;
-    private QuestionsListAdapter mQuestionsListAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.layout_questions_list);
+        questionListViewMvc = new QuestionListViewMvcImpl(LayoutInflater.from(this), null);
+        questionListViewMvc.registerListener(this);
+        setContentView(questionListViewMvc.getRootView());
 
-        mLstQuestions = findViewById(R.id.lst_questions);
-        mQuestionsListAdapter = new QuestionsListAdapter(this, this);
-        mLstQuestions.setAdapter(mQuestionsListAdapter);
 
         mStackoverflowApi = new Retrofit.Builder()
                 .baseUrl(Constants.BASE_URL)
@@ -73,7 +64,7 @@ public class QuestionsListActivity extends BaseActivity implements
                     public void onFailure(Call<QuestionsListResponseSchema> call, Throwable t) {
                         networkCallFailed();
                     }
-                } );
+                });
     }
 
     private void bindQuestions(List<QuestionSchema> questionSchemas) {
@@ -81,9 +72,8 @@ public class QuestionsListActivity extends BaseActivity implements
         for (QuestionSchema questionSchema : questionSchemas) {
             questions.add(new Question(questionSchema.getId(), questionSchema.getTitle()));
         }
-        mQuestionsListAdapter.clear();
-        mQuestionsListAdapter.addAll(questions);
-        mQuestionsListAdapter.notifyDataSetChanged();
+
+        questionListViewMvc.QuestionsBind(questions);
     }
 
     private void networkCallFailed() {
